@@ -8,13 +8,13 @@
     defaultPackage.x86_64-linux =
       with import nixpkgs { system = "x86_64-linux";
 buildInputs = [
-    pkgs.python39
-    pkgs.git
-    pkgs.openssl
-    pkgs.python39Packages.pip
-    pkgs.uwsgi
-    pkgs.python39Packages.virtualenv
-    pkgs.poetry
+    python39
+    git
+    openssl
+    python39Packages.pip
+    uwsgi
+    python39Packages.virtualenv
+    poetry
    ];
  };
 
