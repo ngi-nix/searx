@@ -18,7 +18,7 @@
 
 
 
-pkgs.poetry2nix.mkPoetryApplication {
+nixpkgs.poetry2nix.mkPoetryApplication {
   projectDir = ./.;
       src = pkgs.fetchgit {
         url = "https://github.com/searx/searx.git";
