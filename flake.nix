@@ -2,7 +2,7 @@
  description = "searx : flake";
 
   inputs.nixpkgs.url = github:NixOS/nixpkgs/nixos-20.03;
-  buildInputs = [
+  inputs.buildInputs = [
       nixpkgs.python39
       nixpkgs.git
       nixpkgs.openssl
