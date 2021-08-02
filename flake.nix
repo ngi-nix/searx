@@ -6,7 +6,17 @@
   outputs = { self, nixpkgs }: {
 
     defaultPackage.x86_64-linux =
-      with import nixpkgs { system = "x86_64-linux"; };
+      with import nixpkgs { system = "x86_64-linux";
+buildInputs = [
+    pkgs.python39
+    pkgs.git
+    pkgs.openssl
+    pkgs.python39Packages.pip
+    pkgs.uwsgi
+    pkgs.python39Packages.virtualenv
+    pkgs.poetry
+   ];
+ };
 
 
 pkgs.poetry2nix.mkPoetryApplication {
@@ -17,15 +27,6 @@ pkgs.poetry2nix.mkPoetryApplication {
         sha256 = "sIJ+QXwUdsRIpg6ffUS3ItQvrFy0kmtI8whaiR7qEz4=";
       };
 
-  buildInputs = [
-    pkgs.python39
-    pkgs.git
-    pkgs.openssl
-    pkgs.python39Packages.pip
-    pkgs.uwsgi
-    pkgs.python39Packages.virtualenv
-    pkgs.poetry
-   ];
 
 };
   };
