@@ -2,22 +2,24 @@
   description = "(insert short project description here)";
 
   # Nixpkgs / NixOS version to use.
-  inputs.nixpkgs.url = "nixpkgs/nixos-20.09";
+  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
 
   # Upstream source tree(s).
-  inputs.hello-src = { url = git+https://git.savannah.gnu.org/git/hello.git; flake = false; };
-  inputs.gnulib-src = { url = git+https://git.savannah.gnu.org/git/gnulib.git; flake = false; };
+  inputs.searx-src = {
+    url = "github:searx/searx";
+    flake = false;
+  };
 
-  outputs = { self, nixpkgs, hello-src, gnulib-src }:
+  outputs = { self, nixpkgs, searx-src }:
     let
 
       # Generate a user-friendly version numer.
-      version = builtins.substring 0 8 hello-src.lastModifiedDate;
+      version = builtins.substring 0 8 searx-src.lastModifiedDate;
 
       # System types to support.
-      supportedSystems = [ "x86_64-linux" ];
+      supportedSystems = [ "x86_64-linux" "x86_64-darwin" ];
 
-      # Helper function to generate an attrset '{ x86_64-linux = f "x86_64-linux"; ... }'.
+      # Helper function to generate an attrset '{ x86_64-linux = f " x86_64-linux "; ... }'.
       forAllSystems = f: nixpkgs.lib.genAttrs supportedSystems (system: f system);
 
       # Nixpkgs instantiated for supported system types.
@@ -29,13 +31,23 @@
 
       # A Nixpkgs overlay.
       overlay = final: prev: {
+        searx = with final; poetry2nix.mkPoetryApplication rec {
+          name = "searx-${version}";
 
-        hello = with final; stdenv.mkDerivation rec {
-          name = "hello-${version}";
+          projectDir = searx-src;
+          pyproject = ./pyproject.toml;
+          poetrylock = ./poetry.lock;
 
-          src = hello-src;
-
-          buildInputs = [ autoconf automake gettext gnulib perl gperf texinfo help2man ];
+          buildInputs = [
+            python39
+            git
+            openssl
+            python39Packages.pip
+            uwsgi
+            python39Packages.Babel
+            python39Packages.virtualenv
+            poetry
+          ];
 
           preConfigure = ''
             mkdir -p .git # force BUILD_FROM_GIT
@@ -51,70 +63,93 @@
       };
 
       # Provide some binary packages for selected system types.
-      packages = forAllSystems (system:
-        {
-          inherit (nixpkgsFor.${system}) hello;
-        });
+      packages = forAllSystems (system: {
+        inherit (nixpkgsFor.${system}) searx;
+      });
 
       # The default package for 'nix build'. This makes sense if the
       # flake provides only one package or there is a clear "main"
       # package.
-      defaultPackage = forAllSystems (system: self.packages.${system}.hello);
+      defaultPackage = forAllSystems (system: self.packages.${system}.searx);
 
+      devShell = forAllSystems (system:
+        let
+          pkgs = nixpkgsFor.${system};
+        in
+        pkgs.mkShell
+          {
+            buildInputs = with pkgs;[
+              python39
+              git
+              openssl
+              python39Packages.pip
+              uwsgi
+              python39Packages.Babel
+              python39Packages.virtualenv
+              pkgs.poetry
+            ];
+          }
+      );
+      # TODO: figure out the module
       # A NixOS module, if applicable (e.g. if the package provides a system service).
-      nixosModules.hello =
-        { pkgs, ... }:
-        {
-          nixpkgs.overlays = [ self.overlay ];
+      # nixosModules.searx =
+      #   { pkgs, ... }:
+      #   {
+      #     nixpkgs.overlays = [ self.overlay ];
 
-          environment.systemPackages = [ pkgs.hello ];
+      #     environment.systemPackages = [ pkgs.searx ];
 
-          #systemd.services = { ... };
-        };
+      #     #systemd.services = { ... };
+      #   };
 
+      # TODO: figure out which tests to add
       # Tests run by 'nix flake check' and by Hydra.
-      checks = forAllSystems (system: {
-        inherit (self.packages.${system}) hello;
+      # checks = forAllSystems (system: {
+      #   inherit (self.packages.${system}) searx;
 
-        # Additional tests, if applicable.
-        test =
-          with nixpkgsFor.${system};
-          stdenv.mkDerivation {
-            name = "hello-test-${version}";
+      #   # Additional tests, if applicable.
+      #   test =
+      #     with nixpkgsFor.${system};
+      #     stdenv.mkDerivation {
+      #       name = "hello-test-${version}";
 
-            buildInputs = [ hello ];
+      #       buildInputs = [ hello ];
 
-            unpackPhase = "true";
+      #       unpackPhase = "true";
 
-            buildPhase = ''
-              echo 'running some integration tests'
-              [[ $(hello) = 'Hello, world!' ]]
-            '';
+      #       buildPhase = ''
+      #         echo 'running some integration tests'
+      #         [[ $(hello) = 'Hello, world!' ]]
+      #       '';
 
-            installPhase = "mkdir -p $out";
-          };
+      #       installPhase = "mkdir -p $out";
+      #     };
 
-        # A VM test of the NixOS module.
-        vmTest =
-          with import (nixpkgs + "/nixos/lib/testing-python.nix") {
-            inherit system;
-          };
+      #   # A VM test of the NixOS module.
+      #   vmTest =
+      #     with import (nixpkgs + "/nixos/lib/testing-python.nix") {
+      #       inherit system;
+      #     };
 
-          makeTest {
-            nodes = {
-              client = { ... }: {
-                imports = [ self.nixosModules.hello ];
-              };
-            };
+      #     makeTest {
+      #       nodes = {
+      #         client = { ... }: {
+      #           imports = [ self.nixosModules.hello ];
+      #         };
+      #       };
 
-            testScript =
-              ''
-                start_all()
-                client.wait_for_unit("multi-user.target")
-                client.succeed("hello")
-              '';
-          };
-      });
+      #       testScript =
+      #         ''
+      #           start_all()
+      #           client.wait_for_unit("multi-user.target")
+      #           client.succeed("hello")
+      #         '';
+      #     };
+      # });
 
     };
 }
+
+
+
+

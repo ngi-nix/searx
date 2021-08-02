@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "searx"
+version = "0.1.0"
+description = ""
+authors = ["summer_of_nix"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+certifi = "2020.12.05"
+Babel = "2.9.1"
+Flask-Babel = "2.0.0"
+Flask = "1.1.2"
+Jinja2 = "2.11.3"
+lxml = "4.6.3"
+Pygments = "2.8.0"
+python-dateutil = "2.8.1"
+PyYAML = "5.4.1"
+httpx = { version = "0.18.2", extras = ["http2"] }
+Brotli = "1.0.9"
+uvloop = "0.15.2"
+httpx-socks = { version = "0.3.1", extras = ["asyncio"] }
+langdetect = "1.0.8"
+setproctitle = "1.2.2"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
