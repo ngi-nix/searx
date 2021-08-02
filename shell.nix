@@ -1,3 +1,13 @@
-(import (fetchTarball https://github.com/edolstra/flake-compat/archive/master.tar.gz) {
-  src = builtins.fetchGit ./.;
-}).shellNix
+with (import <nixpkgs> {});
+mkShell {
+  buildInputs = [
+    python39
+    git
+    openssl
+    python39Packages.pip
+    uwsgi
+    python39Packages.virtualenv
+    pkgs.poetry
+   ];
+}
+
